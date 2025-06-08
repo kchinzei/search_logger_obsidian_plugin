@@ -1,0 +1,25 @@
+{
+  "name": "search-logger",
+  "version": "1.0.0",
+  "description": "Search Logger plugin for Obsidian; log search terms at Google, Edge, etc.",
+  "main": "dist/main.js",
+  "scripts": {
+    "dev": "node esbuild.config.mjs",
+    "build": "node esbuild.config.mjs production",
+    "version": "node version-bump.mjs && git add manifest.json versions.json",
+    "fix": "run-p fix:*",
+    "fix:eslint": "npm run lint:eslint -- --fix",
+    "fix:prettier": "npm run lint:prettier -- --write",
+    "lint": "run-p lint:*",
+    "lint:eslint": "eslint --ext js,ts .",
+    "lint:prettier": "prettier -l \"**/*.{json,md,yml}\"",
+    "lint:type": "tsc --noEmit",
+    "tslint": "tslint '*.ts'"
+  },
+  "keywords": [],
+  "author": "Kiyo Chinzei",
+  "license": "MIT",
+  "dependencies" : {
+    "tslib": "^2.8.0"
+  }
+}

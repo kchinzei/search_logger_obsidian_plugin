@@ -1,0 +1,11 @@
+{
+  "id": "search-logger",
+  "name": "Search Logger",
+  "version": "1.0.0",
+  "minAppVersion": "0.15.0",
+  "description": "Search Logger for Obsidian; Logs Google/Bing search terms into Obsidian note.",
+  "author": "Kiyo Chinzei",
+  "authorUrl": "https://github.com/kchinzei/search_logger",
+  "fundingUrl": "",
+  "isDesktopOnly": false
+}
