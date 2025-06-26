@@ -94,6 +94,21 @@ export default class SearchLoggerPlugin extends Plugin {
       this.server.listen(port, () => {
         console.log(`SearchLogger listening on http://localhost:${port}`);
       });
+
+      this.addCommand({
+        id: 'open-search-log',
+        name: 'Open Log Note',
+        callback: async () => {
+          const file = this.app.vault.getAbstractFileByPath(this.logFileName);
+          try {
+            const leaf = this.app.workspace.getLeaf(true);
+            await leaf.openFile(file);
+          } catch (err) {
+            console.error('[SearchLogger] Failed to open file:', err);
+            new Notice(`❌ Failed to open: ${err}`);
+          }
+        },
+      });
     });
   }
 
@@ -197,10 +212,10 @@ export default class SearchLoggerPlugin extends Plugin {
   validateLogFileName(name: string): string | null {
     const trimmed = name.trim();
     if (!trimmed) {
-      return 'Log file name cannot be empty.';
+      return 'Log note name cannot be empty.';
     }
     if (trimmed.endsWith('/')) {
-      return 'Log file name must not end with a slash.';
+      return 'Log note name must not end with a slash.';
     }
 
     const parts = trimmed.split('/');
@@ -228,7 +243,7 @@ export default class SearchLoggerPlugin extends Plugin {
       const af = this.app.vault.getAbstractFileByPath(path);
       if (!af) {
         await this.app.vault.create(path, '');
-        new Notice(`Created new log file: ${path}`);
+        new Notice(`Created new log note: ${path}`);
       }
     } catch (err) {
       console.error('initLogFile failed:', err);
@@ -271,7 +286,7 @@ class SearchLoggerSettingTab extends PluginSettingTab {
 
     let fileErrorEl: HTMLElement;
     new Setting(containerEl)
-      .setName('Log file name')
+      .setName('Log note name')
       .setDesc(
         'Type a name with or without “.md”. We’ll append “.md” if you omit it.',
       )
@@ -390,7 +405,7 @@ class SearchLoggerSettingTab extends PluginSettingTab {
     new Setting(containerEl)
       .setName('Prepend mode')
       .setDesc(
-        'When ON, new entries will be inserted at the top of the file; ' +
+        'When ON, new entries will be inserted at the top of the log; ' +
           'when OFF, entries append at the bottom. ' +
           'Inserting at the top could be slow when the log grows.',
       )

@@ -27,3 +27,9 @@ You also need to setup Search Logger Extension for your browser.
 	- Log note name: Filename of a note. '.md' is automatically appeded.
 	- Listener port: local server port number. You must match it with that in the browser extension.
 	- Prepend mode: When on, new entries are inserted at the top of the note. It can make Obsidian slow the the log growing very long.
+
+## Tips
+
+You can add a hotkey to open the log note. From menu
+  **Preferences → Hotkeys → "Search Logger: Open Log Note"**
+ to add a hotkey combination.
