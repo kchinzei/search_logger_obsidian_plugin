@@ -405,8 +405,8 @@ class SearchLoggerSettingTab extends PluginSettingTab {
     new Setting(containerEl)
       .setName('Prepend mode')
       .setDesc(
-        'When ON, new entries will be inserted at the top of the log; ' +
-          'when OFF, entries append at the bottom. ' +
+        'When ON, search terms are inserted at the top of the log; ' +
+          'when OFF, search terms are appended at the bottom. ' +
           'Inserting at the top could be slow when the log grows.',
       )
       .addToggle((toggle) =>
