@@ -50,6 +50,8 @@ const DEFAULT_SETTINGS: SearchLoggerSettings = {
 const MAX_RECENT = 3;
 const MIN_PORT = 1024;
 const MAX_PORT = 65535;
+const FROM_PARAM_KEY = 'from';
+const FROM_PARAM_VALUE = 'search-logger';
 
 export default class SearchLoggerPlugin extends Plugin {
   settings: SearchLoggerSettings;
@@ -137,6 +139,15 @@ export default class SearchLoggerPlugin extends Plugin {
           try {
             const { query, url, timestamp } = JSON.parse(body);
 
+            // ✅ Ignore if search originated from Obsidian
+            const parsedUrl = new URL(url);
+            const from = parsedUrl.searchParams.get(FROM_PARAM_KEY);
+            if (from === FROM_PARAM_VALUE) {
+              console.log('SearchLogger: Skipping query from Obsidian click');
+              res.writeHead(204, { 'Access-Control-Allow-Origin': '*' });
+              return res.end();
+            }
+
             if (this.recentQueries.includes(query)) {
               res.writeHead(200, {
                 'Access-Control-Allow-Origin': '*',
@@ -144,10 +155,13 @@ export default class SearchLoggerPlugin extends Plugin {
               return res.end();
             }
 
-            const effective = this.logFileName;
+            // ✅ Append &from=obsidian
+            parsedUrl.searchParams.set(FROM_PARAM_KEY, FROM_PARAM_VALUE);
+            const finalUrl = parsedUrl.toString();
 
+            const effective = this.logFileName;
             const formatted = this.formatTimestamp(timestamp);
-            const line = `- ${formatted}\t— [${query}](${url})\n`;
+            const line = `- ${formatted}\t— [${query}](${finalUrl})\n`;
 
             const af = this.app.vault.getAbstractFileByPath(effective);
             if (!af) {
