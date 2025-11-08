@@ -44,7 +44,7 @@ const SEARCH_LOG = 'SearchLog';
 const DEFAULT_SETTINGS: SearchLoggerSettings = {
   logFileUserPref: SEARCH_LOG,
   port: 27123,
-  prependMode: false,
+  prependMode: true,
 };
 
 const MAX_RECENT = 3;
@@ -139,6 +139,7 @@ export default class SearchLoggerPlugin extends Plugin {
           try {
             const { query, url, timestamp } = JSON.parse(body);
 
+            /*
             // ✅ Ignore if search originated from Obsidian
             const parsedUrl = new URL(url);
             const from = parsedUrl.searchParams.get(FROM_PARAM_KEY);
@@ -147,6 +148,7 @@ export default class SearchLoggerPlugin extends Plugin {
               res.writeHead(204, { 'Access-Control-Allow-Origin': '*' });
               return res.end();
             }
+            */
 
             if (this.recentQueries.includes(query)) {
               res.writeHead(200, {
@@ -155,13 +157,16 @@ export default class SearchLoggerPlugin extends Plugin {
               return res.end();
             }
 
+            /*
             // ✅ Append &from=obsidian
             parsedUrl.searchParams.set(FROM_PARAM_KEY, FROM_PARAM_VALUE);
             const finalUrl = parsedUrl.toString();
+            */
 
             const effective = this.logFileName;
-            const formatted = this.formatTimestamp(timestamp);
-            const line = `- ${formatted}\t— [${query}](${finalUrl})\n`;
+            // const formatted = this.formatTimestamp(timestamp);
+            // const line = `- ${formatted}\t— [${query}](${finalUrl})\n`;
+            const line = `- ${timestamp}\t— ${query} [🔗](${url})\n`;
 
             const af = this.app.vault.getAbstractFileByPath(effective);
             if (!af) {

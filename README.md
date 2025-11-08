@@ -1,6 +1,6 @@
 # Search Logger Plugin for Obsidian
 
-It is a part of Search Logger for Obsidian. It receives the search terms while Obsidian is running.
+It is a companion of [Search Logger browser extension](https://github.com/kchinzei/search_logger). It receives search terms from Search Logger and saves into Obsidian note.
 
 ## How to use
 
@@ -8,7 +8,7 @@ Currently it is in a development stage - you need to install `node` in your PC.
 
 ## Installation
 
-You also need to setup Search Logger Extension for your browser.
+You also need to setup [Search Logger browser extension](https://github.com/kchinzei/search_logger) for your browser.
 
 - Clone this repo.
 - Make sure your NodeJS is at least v16 (`node --version`).

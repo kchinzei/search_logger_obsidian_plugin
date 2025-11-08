@@ -1,6 +1,6 @@
 {
-  "name": "search-logger",
-  "version": "1.0.3",
+  "name": "search-logger-obsidian-plugin",
+  "version": "2.0.0",
   "description": "Search Logger plugin for Obsidian; log search terms at Google, Edge, etc.",
   "main": "dist/main.js",
   "scripts": {

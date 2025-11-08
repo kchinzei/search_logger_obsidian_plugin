@@ -1,11 +1,11 @@
 {
-  "id": "search-logger",
+  "id": "search-logger-obsidian-plugin",
   "name": "Search Logger",
-  "version": "1.0.2",
+  "version": "2.0.0",
   "minAppVersion": "0.15.0",
   "description": "Logs Google/Bing search terms into Obsidian note.",
   "author": "Kiyo Chinzei",
-  "authorUrl": "https://github.com/kchinzei/search_logger",
+  "authorUrl": "https://github.com/kchinzei/search_logger_obsidian_plugin",
   "fundingUrl": "",
   "isDesktopOnly": true
 }
