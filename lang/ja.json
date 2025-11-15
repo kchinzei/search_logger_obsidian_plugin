@@ -1,0 +1,23 @@
+{
+  "plugin.name": "Search Logger",
+  "plugin.desc": "検索語をObsidianのノートに保存します．ブラウザにSearch Logger機能拡張をインストールする必要があります．",
+  "settings.title": "Search Logger 設定",
+  "settings.note.name": "ログを記録するノート名",
+  "settings.note.desc": "ノートのファイル名．'.md'は省略することができます．",
+  "settings.error.note.name.rule1": "ログのノート名は空欄にできません",
+  "settings.error.note.name.rule2": "ログのノート名はスラッシュで終わることはできません",
+  "settings.error.note.name.rule3": "'${FILE}' が存在しますが，フォルダなのでノートにできません",
+  "settings.error.note.folder.rule1": "親フォルダ '${PARENT}' がありません",
+  "settings.error.note.folder.rule2": "'${PARENT}' が存在しますが，フォルダではありません",
+  "settings.port.name": "ポート番号",
+  "settings.port.desc": "Search Logger機能拡張からの情報を受け取るポート(${MIN_PORT}–${MAX_PORT}).",
+  "settings.prepend.name": "新しい順",
+  "settings.prepend.desc": "ONにすると，最新の検索語が先頭になるように保存します．検索語が増えてくると動作が重くなることがあります．",
+  "settings.error.port_used": "ポート ${PORT} 番は既に別で使われています",
+  "settings.error.port_openfail": "ポート ${PORT} 番はエラー ${MSG} になりました",
+  "settings.error.port_is_int": "ポート番号は整数値でなければなりません.",
+  "settings.error.port_out_range": "ポート番号(${PORT})は${MIN_PORT}〜${MAX_PORT}の範囲内でなければなりません",
+  "hotkey.command.name": "ログのノートを開く",
+  "hotkey.error.note.openfail": "❌ ログのノートを開けません: ${err}",
+  "notice.newlog.saved": "ログノートを新規保存: ${PATH}"
+}

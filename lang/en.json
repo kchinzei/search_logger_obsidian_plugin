@@ -1,0 +1,23 @@
+{
+  "plugin.name": "Search Logger",
+  "plugin.desc": "Log your web searches into Obsidian note.",
+  "settings.title": "Search Logger Settings",
+  "settings.note.name": "Log note name",
+  "settings.note.desc": "Type a name with or without '.md'. We'll append '.md' when you omit it.",
+  "settings.error.note.name.rule1": "Log note name cannot be empty.",
+  "settings.error.note.name.rule2": "Log note name must not end with a slash.",
+  "settings.error.note.name.rule3": "'${FILE}' exists but a folder.",
+  "settings.error.note.folder.rule1": "Parent folder '${PARENT}' does not exist.",
+  "settings.error.note.folder.rule2": "Parent '${PARENT}' exists but is not a folder.",
+  "settings.port.name": "Port number",
+  "settings.port.desc": "Port on localhost Search Logger extension uses (${MIN_PORT}–${MAX_PORT}).",
+  "settings.prepend.name": "Prepend mode",
+  "settings.prepend.desc": "When ON, search terms are inserted at the top of the log; when OFF, search terms are appended at the bottom. Inserting at the top could be slow when the log grows.",
+  "settings.error.port_used": "Port ${PORT} is already in use.",
+  "settings.error.port_openfail": "Failed to bind port ${PORT}: ${MSG}",
+  "settings.error.port_is_int": "Port must be an integer.",
+  "settings.error.port_out_range": "Port (${PORT}) must be between ${MIN_PORT} and ${MAX_PORT}.",
+  "hotkey.command.name": "Open Log Note",
+  "hotkey.error.note.openfail": "❌ Failed to open: ${err}",
+  "notice.newlog.saved": "Created new log note: ${PATH}"
+}

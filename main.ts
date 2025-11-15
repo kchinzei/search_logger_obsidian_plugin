@@ -20,50 +20,35 @@
 import {
   App,
   Plugin,
-  PluginSettingTab,
-  Setting,
   TFile,
   TFolder,
   Notice,
 } from 'obsidian';
-import { createServer, IncomingMessage, ServerResponse, Server } from 'http';
+import { createServer, Server } from 'http';
 
-interface SearchLoggerSettings {
-  /** Stem of logFileName, Given by the user preference. */
-  logFileUserPref: string;
-  /** Computed: Full file name (with .md extension). Not persisted. */
-  logFileName?: string;
-  /** The port on localhost where this plugin listens for incoming search‐logging requests. */
-  port: number;
-  /** If true, write new lines at the top of the file; if false, append to the bottom. */
-  prependMode: boolean;
-}
-
-const SEARCH_LOG = 'SearchLog';
-
-const DEFAULT_SETTINGS: SearchLoggerSettings = {
-  logFileUserPref: SEARCH_LOG,
-  port: 27123,
-  prependMode: true,
-};
-
-const MAX_RECENT = 3;
-const MIN_PORT = 1024;
-const MAX_PORT = 65535;
-const FROM_PARAM_KEY = 'from';
-const FROM_PARAM_VALUE = 'search-logger';
+import {
+  SearchLoggerSettings,
+  DEFAULT_SETTINGS,
+  MIN_PORT,
+  MAX_PORT,
+  getLogFileNameFrom,
+  validatePort,
+} from './settings';
+import { createHttpHandler } from './loggingServer';
+import SearchLoggerSettingTab from './searchLoggerSettingTab';
+import { initI18nFromObsidian, t } from './i18n';
 
 export default class SearchLoggerPlugin extends Plugin {
   settings: SearchLoggerSettings;
 
   /** Circular buffer of recent queries (max length = MAX_RECENT). */
-  private recentQueries: string[] = [];
+  public recentQueries: string[] = [];
 
   /** HTTP server instance reference, in case we want to close on unload. */
   public server: Server | null = null;
 
   get logFileName(): string {
-    return this.getLogFileNameFrom(this.settings.logFileUserPref);
+    return getLogFileNameFrom(this.settings.logFileUserPref);
   }
 
   set logFileName(name: string) {
@@ -76,7 +61,9 @@ export default class SearchLoggerPlugin extends Plugin {
   async onload() {
     await this.loadSettings();
 
+    initI18nFromObsidian();
     this.app.workspace.onLayoutReady(async () => {
+      // Validate / init log file
       const initialFileError = this.validateLogFileName(this.logFileName);
       if (initialFileError) {
         new Notice(`SearchLogger ⚠ ${initialFileError}`);
@@ -84,30 +71,41 @@ export default class SearchLoggerPlugin extends Plugin {
         await this.initLogFile(this.logFileName);
       }
 
-      const initialPortError = this.validatePort(this.settings.port);
+      // Validate port
+      const initialPortError = validatePort(this.settings.port);
       if (initialPortError) {
         new Notice(`SearchLogger ⚠ ${initialPortError}`);
       }
 
+      // Settings tab
       this.addSettingTab(new SearchLoggerSettingTab(this.app, this));
 
+      // HTTP server
       const port = this.settings.port;
-      this.server = createServer(this.createHttpHandler());
+      this.server = createServer(
+        createHttpHandler({
+          app: this.app,
+          getLogFileName: () => this.logFileName,
+          getPrependMode: () => this.settings.prependMode,
+          recentQueries: this.recentQueries,
+        }),
+      );
       this.server.listen(port, () => {
         console.log(`SearchLogger listening on http://localhost:${port}`);
       });
 
+      // Command: open log
       this.addCommand({
         id: 'open-search-log',
-        name: 'Open Log Note',
+        name: t('hotkey.command.name'),
         callback: async () => {
           const file = this.app.vault.getAbstractFileByPath(this.logFileName);
           try {
             const leaf = this.app.workspace.getLeaf(true);
-            await leaf.openFile(file);
+            await leaf.openFile(file as TFile);
           } catch (err) {
             console.error('[SearchLogger] Failed to open file:', err);
-            new Notice(`❌ Failed to open: ${err}`);
+            new Notice(t( "hotkey.error.note.openfail", {err}));
           }
         },
       });
@@ -121,120 +119,15 @@ export default class SearchLoggerPlugin extends Plugin {
     }
   }
 
-  public createHttpHandler() {
-    return (req: IncomingMessage, res: ServerResponse) => {
-      if (req.method === 'OPTIONS') {
-        res.writeHead(200, {
-          'Access-Control-Allow-Origin': '*',
-          'Access-Control-Allow-Methods': 'POST, OPTIONS',
-          'Access-Control-Allow-Headers': 'Content-Type',
-        });
-        return res.end();
-      }
-
-      if (req.method === 'POST' && req.url === '/log') {
-        let body = '';
-        req.on('data', (chunk) => (body += chunk));
-        req.on('end', async () => {
-          try {
-            const { query, url, timestamp } = JSON.parse(body);
-
-            /*
-            // ✅ Ignore if search originated from Obsidian
-            const parsedUrl = new URL(url);
-            const from = parsedUrl.searchParams.get(FROM_PARAM_KEY);
-            if (from === FROM_PARAM_VALUE) {
-              console.log('SearchLogger: Skipping query from Obsidian click');
-              res.writeHead(204, { 'Access-Control-Allow-Origin': '*' });
-              return res.end();
-            }
-            */
-
-            if (this.recentQueries.includes(query)) {
-              res.writeHead(200, {
-                'Access-Control-Allow-Origin': '*',
-              });
-              return res.end();
-            }
-
-            /*
-            // ✅ Append &from=obsidian
-            parsedUrl.searchParams.set(FROM_PARAM_KEY, FROM_PARAM_VALUE);
-            const finalUrl = parsedUrl.toString();
-            */
-
-            const effective = this.logFileName;
-            // const formatted = this.formatTimestamp(timestamp);
-            // const line = `- ${formatted}\t— [${query}](${finalUrl})\n`;
-            const line = `- ${timestamp}\t— ${query} [🔗](${url})\n`;
-
-            const af = this.app.vault.getAbstractFileByPath(effective);
-            if (!af) {
-              await this.app.vault.create(effective, line);
-            } else if (af instanceof TFile) {
-              if (this.settings.prependMode) {
-                const oldContent = await this.app.vault.read(af);
-                const newContent = line + oldContent;
-                await this.app.vault.modify(af, newContent);
-              } else {
-                await this.app.vault.append(af, line);
-              }
-            } else {
-              console.warn(
-                `SearchLogger: “${effective}” exists but is a folder. Skipping.`,
-              );
-            }
-
-            this.recentQueries.push(query);
-            if (this.recentQueries.length > MAX_RECENT) {
-              this.recentQueries.shift();
-            }
-
-            res.writeHead(200, {
-              'Access-Control-Allow-Origin': '*',
-            });
-          } catch (e) {
-            console.error('SearchLogger: failed to parse/write:', e);
-            res.writeHead(400, {
-              'Access-Control-Allow-Origin': '*',
-            });
-          }
-          res.end();
-        });
-      } else {
-        res.writeHead(404, {
-          'Access-Control-Allow-Origin': '*',
-        });
-        res.end();
-      }
-    };
-  }
-
-  private formatTimestamp(ms: number): string {
-    const d = new Date(ms);
-    const pad = (n: number) => n.toString().padStart(2, '0');
-
-    const year = d.getFullYear();
-    const month = pad(d.getMonth() + 1);
-    const day = pad(d.getDate());
-    const hour = pad(d.getHours());
-    const minute = pad(d.getMinutes());
-
-    return `${year}-${month}-${day} ${hour}:${minute}`;
-  }
-
-  getLogFileNameFrom(input: string): string {
-    const trimmed = input.trim();
-    return trimmed.toLowerCase().endsWith('.md') ? trimmed : `${trimmed}.md`;
-  }
+  // --- Obsidian-specific helpers that depend on this.app ---
 
   validateLogFileName(name: string): string | null {
     const trimmed = name.trim();
     if (!trimmed) {
-      return 'Log note name cannot be empty.';
+      return t('settings.error.note.name.rule1');
     }
     if (trimmed.endsWith('/')) {
-      return 'Log note name must not end with a slash.';
+      return t('settings.error.note.name.rule2');
     }
 
     const parts = trimmed.split('/');
@@ -242,16 +135,16 @@ export default class SearchLoggerPlugin extends Plugin {
       const parentPath = parts.slice(0, -1).join('/');
       const parent = this.app.vault.getAbstractFileByPath(parentPath);
       if (!parent) {
-        return `Parent folder '${parentPath}' does not exist.`;
+        return t('settings.error.note.folder.rule1', {PARENT: parentPath});
       }
       if (!(parent instanceof TFolder)) {
-        return `Parent '${parentPath}' exists but is not a folder.`;
+        return t('settings.error.note.folder.rule2', {PARENT: parentPath});
       }
     }
 
     const af = this.app.vault.getAbstractFileByPath(trimmed);
     if (af && af instanceof TFolder) {
-      return `'${trimmed}' exists but a folder.`;
+      return t('settings.error.note.name.rule3', {PATH: trimmed});
     }
 
     return null;
@@ -262,22 +155,12 @@ export default class SearchLoggerPlugin extends Plugin {
       const af = this.app.vault.getAbstractFileByPath(path);
       if (!af) {
         await this.app.vault.create(path, '');
-        new Notice(`Created new log note: ${path}`);
+        new Notice(t('notice.newlog.saved', {PATH: path}));
       }
     } catch (err) {
       console.error('initLogFile failed:', err);
       throw err;
     }
-  }
-
-  validatePort(port: number): string | null {
-    if (!Number.isInteger(port)) {
-      return 'Port must be an integer.';
-    }
-    if (port < MIN_PORT || port > MAX_PORT) {
-      return `Port (${port}) must be between ${MIN_PORT} and ${MAX_PORT}.`;
-    }
-    return null;
   }
 
   async loadSettings(): Promise<void> {
@@ -287,154 +170,9 @@ export default class SearchLoggerPlugin extends Plugin {
   async saveSettings(): Promise<void> {
     await this.saveData(this.settings);
   }
-}
 
-class SearchLoggerSettingTab extends PluginSettingTab {
-  plugin: SearchLoggerPlugin;
-
-  constructor(app: App, plugin: SearchLoggerPlugin) {
-    super(app, plugin);
-    this.plugin = plugin;
-  }
-
-  display(): void {
-    const { containerEl } = this;
-    containerEl.empty();
-
-    containerEl.createEl('h2', { text: 'Search Logger Settings' });
-
-    let fileErrorEl: HTMLElement;
-    new Setting(containerEl)
-      .setName('Log note name')
-      .setDesc(
-        'Type a name with or without “.md”. We’ll append “.md” if you omit it.',
-      )
-      .addText((text) => {
-        const inputEl = text.inputEl;
-        text
-          .setPlaceholder(SEARCH_LOG)
-          .setValue(this.plugin.settings.logFileUserPref)
-          .onChange(async (rawValue) => {
-            const computed = this.plugin.getLogFileNameFrom(rawValue);
-            const fileError = this.plugin.validateLogFileName(computed);
-            if (fileError) {
-              fileErrorEl.setText(`⚠ ${fileError}`);
-              fileErrorEl.setAttr('style', 'color: var(--text-error);');
-              inputEl.setAttr('style', 'color: var(--text-error);');
-              return;
-            }
-
-            fileErrorEl.setText('');
-            inputEl.style.color = '';
-            this.plugin.logFileName = rawValue;
-            await this.plugin.initLogFile(this.plugin.logFileName);
-            await this.plugin.saveSettings();
-          });
-
-        fileErrorEl = containerEl.createDiv({
-          cls: 'searchlogger-error-message',
-        });
-        fileErrorEl.setText('');
-        fileErrorEl.setAttr('style', 'font-size: 0.9em; margin-top: 4px;');
-      });
-
-    let portErrorEl: HTMLElement;
-    new Setting(containerEl)
-      .setName('Listener port')
-      .setDesc(
-        `Port on localhost where the plugin listens (${MIN_PORT}–${MAX_PORT}).`,
-      )
-      .addText((text) => {
-        const inputEl = text.inputEl;
-        text
-          .setPlaceholder(String(DEFAULT_SETTINGS.port))
-          .setValue(String(this.plugin.settings.port))
-          .onChange(async (rawValue) => {
-            const trimmed = rawValue.trim();
-            const parsed = parseInt(trimmed, 10);
-            const portCandidate = Number.isNaN(parsed) ? -1 : parsed;
-
-            const rangeError = this.plugin.validatePort(portCandidate);
-            if (rangeError) {
-              portErrorEl.setText(`⚠ ${rangeError}`);
-              portErrorEl.setAttr('style', 'color: var(--text-error);');
-              inputEl.style.color = 'var(--text-error)';
-              return;
-            }
-
-            portErrorEl.setText('');
-
-            const oldPort = this.plugin.settings.port;
-            const oldServer = this.plugin.server;
-
-            if (oldServer) {
-              oldServer.close();
-              this.plugin.server = null;
-            }
-
-            let newServer: Server | null = null;
-            try {
-              newServer = createServer(this.plugin.createHttpHandler());
-              await new Promise<void>((resolve, reject) => {
-                newServer!.once('error', (err: any) => reject(err));
-                newServer!.once('listening', () => resolve());
-                newServer!.listen(portCandidate);
-              });
-
-              this.plugin.server = newServer;
-              this.plugin.settings.port = portCandidate;
-              await this.plugin.saveSettings();
-              portErrorEl.setText('');
-              inputEl.style.color = '';
-              console.log(
-                `SearchLogger now listening on http://localhost:${portCandidate}`,
-              );
-            } catch (err: any) {
-              const msg =
-                err.code === 'EADDRINUSE'
-                  ? `Port ${portCandidate} is already in use.`
-                  : `Failed to bind port ${portCandidate}: ${err.message}`;
-              portErrorEl.setText(`⚠ ${msg}`);
-              portErrorEl.setAttr('style', 'color: var(--text-error);');
-              inputEl.style.color = 'var(--text-error)';
-
-              if (newServer) {
-                newServer.close();
-                newServer = null;
-              }
-              if (oldServer) {
-                oldServer.listen(oldPort, () => {
-                  this.plugin.server = oldServer;
-                  console.log(
-                    `SearchLogger reverted to http://localhost:${oldPort}`,
-                  );
-                });
-              }
-              text.setValue(String(oldPort));
-            }
-          });
-
-        portErrorEl = containerEl.createDiv({
-          cls: 'searchlogger-error-message',
-        });
-        portErrorEl.setText('');
-        portErrorEl.setAttr('style', 'font-size: 0.9em; margin-top: 4px;');
-      });
-
-    new Setting(containerEl)
-      .setName('Prepend mode')
-      .setDesc(
-        'When ON, search terms are inserted at the top of the log; ' +
-          'when OFF, search terms are appended at the bottom. ' +
-          'Inserting at the top could be slow when the log grows.',
-      )
-      .addToggle((toggle) =>
-        toggle
-          .setValue(this.plugin.settings.prependMode)
-          .onChange(async (value) => {
-            this.plugin.settings.prependMode = value;
-            await this.plugin.saveSettings();
-          }),
-      );
+  // Re-expose the pure helper so settings tab can call it via plugin
+  getLogFileNameFrom(input: string): string {
+    return getLogFileNameFrom(input);
   }
 }
