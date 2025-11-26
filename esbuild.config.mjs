@@ -50,9 +50,10 @@ const context = await esbuild.context({
 async function copyFiles() {
 	await mkdir(distDir, { recursive: true });
 	await cp(resolve(__dirname, 'manifest.json'), resolve(distDir, 'manifest.json'));
+	await cp(resolve(__dirname, 'lang'), resolve(distDir, 'lang'), { recursive: true });
 	// Optional: add more assets
 	// await cp(resolve(__dirname, 'styles.css'), resolve(distDir, 'styles.css'));
-	console.log('Copied files to dist/: manifest.json');
+	console.log('Copied files to dist/: manifest.json, lang');
 }
 
 if (prod) {
