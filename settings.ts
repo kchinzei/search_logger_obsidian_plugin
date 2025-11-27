@@ -13,8 +13,8 @@ export interface SearchLoggerSettings {
   prependMode: boolean;
 }
 
-import { t } from './i18n';
-export const SEARCH_LOG = 'SearchLog';
+import { t } from "./i18n";
+export const SEARCH_LOG = "SearchLog";
 
 export const DEFAULT_SETTINGS: SearchLoggerSettings = {
   logFileUserPref: SEARCH_LOG,
@@ -25,27 +25,31 @@ export const DEFAULT_SETTINGS: SearchLoggerSettings = {
 export const MAX_RECENT = 3;
 export const MIN_PORT = 1024;
 export const MAX_PORT = 65535;
-export const FROM_PARAM_KEY = 'from';
-export const FROM_PARAM_VALUE = 'search-logger';
+export const FROM_PARAM_KEY = "from";
+export const FROM_PARAM_VALUE = "search-logger";
 
 export function getLogFileNameFrom(input: string): string {
   const trimmed = input.trim();
-  return trimmed.toLowerCase().endsWith('.md') ? trimmed : `${trimmed}.md`;
+  return trimmed.toLowerCase().endsWith(".md") ? trimmed : `${trimmed}.md`;
 }
 
 export function validatePort(port: number): string | null {
   if (!Number.isInteger(port)) {
-    return t('settings.error.port_is_int');
+    return t("settings.error.port_is_int");
   }
   if (port < MIN_PORT || port > MAX_PORT) {
-    return t("settings.error.port_out_range", {PORT: port, MIN_PORT, MAX_PORT});
+    return t("settings.error.port_out_range", {
+      PORT: port,
+      MIN_PORT,
+      MAX_PORT,
+    });
   }
   return null;
 }
 
 export function formatTimestamp(ms: number): string {
   const d = new Date(ms);
-  const pad = (n: number) => n.toString().padStart(2, '0');
+  const pad = (n: number) => n.toString().padStart(2, "0");
 
   const year = d.getFullYear();
   const month = pad(d.getMonth() + 1);

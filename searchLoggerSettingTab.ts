@@ -1,18 +1,18 @@
 //    The MIT License (MIT)
 //    ...
 
-import { App, PluginSettingTab, Setting } from 'obsidian';
-import { createServer, Server } from 'http';
-import { t } from './i18n';
-import type SearchLoggerPlugin from './main';
+import { App, PluginSettingTab, Setting } from "obsidian";
+import { createServer, Server } from "http";
+import { t } from "./i18n";
+import type SearchLoggerPlugin from "./main";
 import {
   SEARCH_LOG,
   DEFAULT_SETTINGS,
   MIN_PORT,
   MAX_PORT,
   validatePort,
-} from './settings';
-import { createHttpHandler } from './loggingServer';
+} from "./settings";
+import { createHttpHandler } from "./loggingServer";
 
 export default class SearchLoggerSettingTab extends PluginSettingTab {
   plugin: SearchLoggerPlugin;
@@ -26,13 +26,13 @@ export default class SearchLoggerSettingTab extends PluginSettingTab {
     const { containerEl } = this;
     containerEl.empty();
 
-    containerEl.createEl('h2', { text: t('settings.title') });
+    containerEl.createEl("h2", { text: t("settings.title") });
 
     // --- Log file name setting ---
     let fileErrorEl: HTMLElement;
     new Setting(containerEl)
-      .setName(t('settings.note.name'))
-      .setDesc(t('settings.note.desc'))
+      .setName(t("settings.note.name"))
+      .setDesc(t("settings.note.desc"))
       .addText((text) => {
         const inputEl = text.inputEl;
         text
@@ -43,30 +43,30 @@ export default class SearchLoggerSettingTab extends PluginSettingTab {
             const fileError = this.plugin.validateLogFileName(computed);
             if (fileError) {
               fileErrorEl.setText(`⚠ ${fileError}`);
-              fileErrorEl.setAttr('style', 'color: var(--text-error);');
-              inputEl.setAttr('style', 'color: var(--text-error);');
+              fileErrorEl.setAttr("style", "color: var(--text-error);");
+              inputEl.setAttr("style", "color: var(--text-error);");
               return;
             }
 
-            fileErrorEl.setText('');
-            inputEl.style.color = '';
+            fileErrorEl.setText("");
+            inputEl.style.color = "";
             this.plugin.logFileName = rawValue;
             await this.plugin.initLogFile(this.plugin.logFileName);
             await this.plugin.saveSettings();
           });
 
         fileErrorEl = containerEl.createDiv({
-          cls: 'searchlogger-error-message',
+          cls: "searchlogger-error-message",
         });
-        fileErrorEl.setText('');
-        fileErrorEl.setAttr('style', 'font-size: 0.9em; margin-top: 4px;');
+        fileErrorEl.setText("");
+        fileErrorEl.setAttr("style", "font-size: 0.9em; margin-top: 4px;");
       });
 
     // --- Port setting ---
     let portErrorEl: HTMLElement;
     new Setting(containerEl)
-      .setName(t('settings.port.name'))
-      .setDesc(t('settings.port.desc', {MIN_PORT, MAX_PORT}))
+      .setName(t("settings.port.name"))
+      .setDesc(t("settings.port.desc", { MIN_PORT, MAX_PORT }))
       .addText((text) => {
         const inputEl = text.inputEl;
         text
@@ -80,12 +80,12 @@ export default class SearchLoggerSettingTab extends PluginSettingTab {
             const rangeError = validatePort(portCandidate);
             if (rangeError) {
               portErrorEl.setText(`⚠ ${rangeError}`);
-              portErrorEl.setAttr('style', 'color: var(--text-error);');
-              inputEl.style.color = 'var(--text-error)';
+              portErrorEl.setAttr("style", "color: var(--text-error);");
+              inputEl.style.color = "var(--text-error)";
               return;
             }
 
-            portErrorEl.setText('');
+            portErrorEl.setText("");
 
             const oldPort = this.plugin.settings.port;
             const oldServer = this.plugin.server;
@@ -107,27 +107,30 @@ export default class SearchLoggerSettingTab extends PluginSettingTab {
               );
 
               await new Promise<void>((resolve, reject) => {
-                newServer!.once('error', (err: any) => reject(err));
-                newServer!.once('listening', () => resolve());
+                newServer!.once("error", (err: any) => reject(err));
+                newServer!.once("listening", () => resolve());
                 newServer!.listen(portCandidate);
               });
 
               this.plugin.server = newServer;
               this.plugin.settings.port = portCandidate;
               await this.plugin.saveSettings();
-              portErrorEl.setText('');
-              inputEl.style.color = '';
+              portErrorEl.setText("");
+              inputEl.style.color = "";
               console.log(
                 `SearchLogger now listening on http://localhost:${portCandidate}`,
               );
             } catch (err: any) {
               const msg =
-                err.code === 'EADDRINUSE'
-                  ? t('settings.error.port_used', {PORT: portCandidate})
-                  : t('settings.error.port_openfail', {PORT: portCandidate, MSG: err.message});
+                err.code === "EADDRINUSE"
+                  ? t("settings.error.port_used", { PORT: portCandidate })
+                  : t("settings.error.port_openfail", {
+                      PORT: portCandidate,
+                      MSG: err.message,
+                    });
               portErrorEl.setText(`⚠ ${msg}`);
-              portErrorEl.setAttr('style', 'color: var(--text-error);');
-              inputEl.style.color = 'var(--text-error)';
+              portErrorEl.setAttr("style", "color: var(--text-error);");
+              inputEl.style.color = "var(--text-error)";
 
               if (newServer) {
                 newServer.close();
@@ -146,16 +149,16 @@ export default class SearchLoggerSettingTab extends PluginSettingTab {
           });
 
         portErrorEl = containerEl.createDiv({
-          cls: 'searchlogger-error-message',
+          cls: "searchlogger-error-message",
         });
-        portErrorEl.setText('');
-        portErrorEl.setAttr('style', 'font-size: 0.9em; margin-top: 4px;');
+        portErrorEl.setText("");
+        portErrorEl.setAttr("style", "font-size: 0.9em; margin-top: 4px;");
       });
 
     // --- Prepend mode toggle ---
     new Setting(containerEl)
-      .setName(t('settings.prepend.name'))
-      .setDesc(t('settings.prepend.desc'))
+      .setName(t("settings.prepend.name"))
+      .setDesc(t("settings.prepend.desc"))
       .addToggle((toggle) =>
         toggle
           .setValue(this.plugin.settings.prependMode)

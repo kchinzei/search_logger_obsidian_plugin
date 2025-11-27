@@ -1,13 +1,10 @@
 //    The MIT License (MIT)
 //    ...
 
-import { App, TFile } from 'obsidian';
-import { IncomingMessage, ServerResponse } from 'http';
-import {
-  MAX_RECENT,
-  FROM_PARAM_KEY,
-  FROM_PARAM_VALUE,
-} from './settings';
+import { App, TFile } from "obsidian";
+import { IncomingMessage, ServerResponse } from "http";
+import { MAX_RECENT } from "./settings";
+// import { FROM_PARAM_KEY, FROM_PARAM_VALUE } from "./settings";
 
 export interface LogContext {
   app: App;
@@ -28,19 +25,19 @@ export function createHttpHandler(ctx: LogContext) {
 
   return (req: IncomingMessage, res: ServerResponse) => {
     // CORS preflight
-    if (req.method === 'OPTIONS') {
+    if (req.method === "OPTIONS") {
       res.writeHead(200, {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'POST, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type',
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "POST, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type",
       });
       return res.end();
     }
 
-    if (req.method === 'POST' && req.url === '/log') {
-      let body = '';
-      req.on('data', (chunk) => (body += chunk));
-      req.on('end', async () => {
+    if (req.method === "POST" && req.url === "/log") {
+      let body = "";
+      req.on("data", (chunk) => (body += chunk));
+      req.on("end", async () => {
         try {
           const { query, url, timestamp } = JSON.parse(body);
 
@@ -58,7 +55,7 @@ export function createHttpHandler(ctx: LogContext) {
           // De-duplicate recent queries
           if (recentQueries.includes(query)) {
             res.writeHead(200, {
-              'Access-Control-Allow-Origin': '*',
+              "Access-Control-Allow-Origin": "*",
             });
             return res.end();
           }
@@ -98,19 +95,19 @@ export function createHttpHandler(ctx: LogContext) {
           }
 
           res.writeHead(200, {
-            'Access-Control-Allow-Origin': '*',
+            "Access-Control-Allow-Origin": "*",
           });
         } catch (e) {
-          console.error('SearchLogger: failed to parse/write:', e);
+          console.error("SearchLogger: failed to parse/write:", e);
           res.writeHead(400, {
-            'Access-Control-Allow-Origin': '*',
+            "Access-Control-Allow-Origin": "*",
           });
         }
         res.end();
       });
     } else {
       res.writeHead(404, {
-        'Access-Control-Allow-Origin': '*',
+        "Access-Control-Allow-Origin": "*",
       });
       res.end();
     }

@@ -17,26 +17,18 @@
 //    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 //    THE SOFTWARE.
 
-import {
-  App,
-  Plugin,
-  TFile,
-  TFolder,
-  Notice,
-} from 'obsidian';
-import { createServer, Server } from 'http';
+import { Plugin, TFile, TFolder, Notice } from "obsidian";
+import { createServer, Server } from "http";
 
 import {
   SearchLoggerSettings,
   DEFAULT_SETTINGS,
-  MIN_PORT,
-  MAX_PORT,
   getLogFileNameFrom,
   validatePort,
-} from './settings';
-import { createHttpHandler } from './loggingServer';
-import SearchLoggerSettingTab from './searchLoggerSettingTab';
-import { initI18nFromObsidian, t } from './i18n';
+} from "./settings";
+import { createHttpHandler } from "./loggingServer";
+import SearchLoggerSettingTab from "./searchLoggerSettingTab";
+import { initI18nFromObsidian, t } from "./i18n";
 
 export default class SearchLoggerPlugin extends Plugin {
   settings: SearchLoggerSettings;
@@ -53,7 +45,7 @@ export default class SearchLoggerPlugin extends Plugin {
 
   set logFileName(name: string) {
     const trimmed = name.trim();
-    this.settings.logFileUserPref = trimmed.toLowerCase().endsWith('.md')
+    this.settings.logFileUserPref = trimmed.toLowerCase().endsWith(".md")
       ? trimmed.slice(0, -3)
       : trimmed;
   }
@@ -96,16 +88,16 @@ export default class SearchLoggerPlugin extends Plugin {
 
       // Command: open log
       this.addCommand({
-        id: 'open-search-log',
-        name: t('hotkey.command.name'),
+        id: "open-search-log",
+        name: t("hotkey.command.name"),
         callback: async () => {
           const file = this.app.vault.getAbstractFileByPath(this.logFileName);
           try {
             const leaf = this.app.workspace.getLeaf(true);
             await leaf.openFile(file as TFile);
           } catch (err) {
-            console.error('[SearchLogger] Failed to open file:', err);
-            new Notice(t( "hotkey.error.note.openfail", {err}));
+            console.error("[SearchLogger] Failed to open file:", err);
+            new Notice(t("hotkey.error.note.openfail", { err }));
           }
         },
       });
@@ -124,27 +116,27 @@ export default class SearchLoggerPlugin extends Plugin {
   validateLogFileName(name: string): string | null {
     const trimmed = name.trim();
     if (!trimmed) {
-      return t('settings.error.note.name.rule1');
+      return t("settings.error.note.name.rule1");
     }
-    if (trimmed.endsWith('/')) {
-      return t('settings.error.note.name.rule2');
+    if (trimmed.endsWith("/")) {
+      return t("settings.error.note.name.rule2");
     }
 
-    const parts = trimmed.split('/');
+    const parts = trimmed.split("/");
     if (parts.length > 1) {
-      const parentPath = parts.slice(0, -1).join('/');
+      const parentPath = parts.slice(0, -1).join("/");
       const parent = this.app.vault.getAbstractFileByPath(parentPath);
       if (!parent) {
-        return t('settings.error.note.folder.rule1', {PARENT: parentPath});
+        return t("settings.error.note.folder.rule1", { PARENT: parentPath });
       }
       if (!(parent instanceof TFolder)) {
-        return t('settings.error.note.folder.rule2', {PARENT: parentPath});
+        return t("settings.error.note.folder.rule2", { PARENT: parentPath });
       }
     }
 
     const af = this.app.vault.getAbstractFileByPath(trimmed);
     if (af && af instanceof TFolder) {
-      return t('settings.error.note.name.rule3', {PATH: trimmed});
+      return t("settings.error.note.name.rule3", { PATH: trimmed });
     }
 
     return null;
@@ -154,11 +146,11 @@ export default class SearchLoggerPlugin extends Plugin {
     try {
       const af = this.app.vault.getAbstractFileByPath(path);
       if (!af) {
-        await this.app.vault.create(path, '');
-        new Notice(t('notice.newlog.saved', {PATH: path}));
+        await this.app.vault.create(path, "");
+        new Notice(t("notice.newlog.saved", { PATH: path }));
       }
     } catch (err) {
-      console.error('initLogFile failed:', err);
+      console.error("initLogFile failed:", err);
       throw err;
     }
   }
