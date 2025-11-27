@@ -6,6 +6,7 @@ import { resolve, dirname } from "path";
 import { fileURLToPath } from "url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
+const srcDir = resolve(__dirname, "src");
 const distDir = resolve(__dirname, "dist");
 
 const banner = `/*
@@ -19,7 +20,8 @@ const context = await esbuild.context({
   banner: {
     js: banner,
   },
-  entryPoints: ["main.ts"],
+  absWorkingDir: srcDir,
+  entryPoints: [resolve(srcDir, "main.ts")],
   bundle: true,
   external: [
     "obsidian",
@@ -50,14 +52,14 @@ const context = await esbuild.context({
 async function copyFiles() {
   await mkdir(distDir, { recursive: true });
   await cp(
-    resolve(__dirname, "manifest.json"),
+    resolve(srcDir, "manifest.json"),
     resolve(distDir, "manifest.json"),
   );
-  await cp(resolve(__dirname, "lang"), resolve(distDir, "lang"), {
+  await cp(resolve(srcDir, "lang"), resolve(distDir, "lang"), {
     recursive: true,
   });
   // Optional: add more assets
-  // await cp(resolve(__dirname, 'styles.css'), resolve(distDir, 'styles.css'));
+  // await cp(resolve(srcDir, 'styles.css'), resolve(distDir, 'styles.css'));
   console.log("Copied files to dist/: manifest.json, lang");
 }
 

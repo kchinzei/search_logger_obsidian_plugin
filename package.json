@@ -13,8 +13,7 @@
     "lint": "run-p lint:*",
     "lint:eslint": "eslint --ext js,ts .",
     "lint:prettier": "prettier -l \"**/*.{js,ts,json,md,yml}\"",
-    "lint:type": "tsc --noEmit",
-    "tslint": "tslint '*.ts'"
+    "lint:type": "tsc --noEmit"
   },
   "keywords": [],
   "author": "Kiyo Chinzei",
@@ -26,6 +25,13 @@
     "@types/node": "^24.10.1",
     "esbuild": "^0.27.0",
     "obsidian": "^1.10.3",
+    "eslint": "^9.36.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prefer-arrow": "^1.2.3",
+    "eslint-plugin-prettier": "^5.5.4",
+    "commander": "^14.0.1",
+    "npm-run-all": "^4.1.5",
+    "prettier": "^3.6.2",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.48.0"
   }
